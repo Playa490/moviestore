@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% load static %}
+{% block content %}
+  <h1>Top Comments</h1>
+  <ul>
+    <ul class="list-group">
+      {% for review in template_data.reviews %}
+        <li class="list-group-item pb-3 pt-3">
+          <h5 class="card-title">
+            Review by {{ review.user.username }} on {{review.movie.name}}
+          </h5>
+          <h6 class="card-subtitle mb-2 text-muted">
+            {{ review.date }}
+          </h6>
+        <p class="card-text">{{ review.comment}} ({{ review.likes}} likes)</p>
+      {% endfor %}
+  </ul>
+{% endblock %}
