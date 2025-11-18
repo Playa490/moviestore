@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="p-3">
+  <div class="container">
+    <div class="row mt-3">
+      <div class="col-md-6 mx-auto mb-3">
+        <div class="card shadow-sm">
+          <div class="card-body text-center">
+            <h2 class="text-success mb-4">Purchase Completed!</h2>
+            <hr />
+            <p>Congratulations, your purchase has been completed successfully.</p>
+            <p>Order number: <b>#{{ template_data.order_id }}</b></p>
+            <hr />
+            <div class="d-grid gap-2 d-md-flex justify-content-md-center mt-4">
+              <a href="{% url 'home.index' %}" class="btn bg-dark text-white">Continue Shopping</a>
+              <a href="{% url 'accounts.orders' %}" class="btn btn-outline-secondary">View Orders</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock content %}
+

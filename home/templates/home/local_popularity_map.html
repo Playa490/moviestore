@@ -1,0 +1,147 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="p-3 mt-4">
+  <div class="container">
+    <div class="row">
+      <div class="col-12">
+        <h2 class="mb-4">Local Popularity Map</h2>
+        <p class="text-muted mb-4">Discover which movies are trending in different geographic regions</p>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-md-8 mb-4">
+        <div class="card shadow-sm">
+          <div class="card-body p-0">
+            <div id="map" style="height: 500px; width: 100%;"></div>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="card shadow-sm">
+          <div class="card-header bg-dark text-white">
+            <h5 class="mb-0" id="region-title">Select a Region</h5>
+          </div>
+          <div class="card-body" id="trending-movies">
+            <p class="text-muted">Click on a region marker on the map to see trending movies.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Leaflet CSS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+<!-- Leaflet JS -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script>
+  // Initialize map centered on USA
+  var map = L.map('map').setView([39.8283, -98.5795], 4);
+
+  // Add OpenStreetMap tiles
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap contributors',
+    maxZoom: 19
+  }).addTo(map);
+
+  // Region data from Django
+  var regionData = {{ template_data.region_data_json|safe }};
+  var regionCoordinates = {{ template_data.region_coordinates_json|safe }};
+
+  // Color scheme for markers
+  var colors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A', '#98D8C8', '#F7DC6F'];
+
+  // Store markers and their region codes
+  var markers = {};
+
+  // Create markers for each region with data
+  var colorIndex = 0;
+  for (var regionCode in regionCoordinates) {
+    var coords = regionCoordinates[regionCode];
+    var color = colors[colorIndex % colors.length];
+    
+    // Create custom icon
+    var icon = L.divIcon({
+      className: 'custom-marker',
+      html: '<div style="background-color: ' + color + '; width: 30px; height: 30px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.3);"></div>',
+      iconSize: [30, 30],
+      iconAnchor: [15, 15]
+    });
+
+    // Only show marker if region has data
+    if (regionData[regionCode]) {
+      var marker = L.marker([coords.lat, coords.lng], {icon: icon})
+        .addTo(map)
+        .bindPopup('<strong>' + regionData[regionCode].name + '</strong><br>Click to see trending movies');
+      
+      marker.regionCode = regionCode;
+      markers[regionCode] = marker;
+
+      // Add click event
+      marker.on('click', function(e) {
+        var code = this.regionCode;
+        showRegionMovies(code);
+      });
+
+      colorIndex++;
+    }
+  }
+
+  // Function to display trending movies for a region
+  function showRegionMovies(regionCode) {
+    var region = regionData[regionCode];
+    if (!region) return;
+
+    var moviesHtml = '<h5>' + region.name + '</h5><hr>';
+    moviesHtml += '<div class="list-group">';
+
+    if (region.movies && region.movies.length > 0) {
+      region.movies.forEach(function(movie) {
+        moviesHtml += '<div class="list-group-item mb-2">';
+        moviesHtml += '<div class="d-flex align-items-center">';
+        if (movie.image) {
+          moviesHtml += '<img src="/media/' + movie.image + '" alt="' + movie.name + '" class="me-3" style="width: 60px; height: 80px; object-fit: cover;">';
+        }
+        moviesHtml += '<div class="flex-grow-1">';
+        moviesHtml += '<h6 class="mb-1">' + movie.name + '</h6>';
+        moviesHtml += '<small class="text-muted">Purchased: ' + movie.quantity + ' times</small>';
+        moviesHtml += '</div>';
+        moviesHtml += '</div>';
+        moviesHtml += '</div>';
+      });
+    } else {
+      moviesHtml += '<p class="text-muted">No trending data available for this region yet.</p>';
+    }
+
+    moviesHtml += '</div>';
+
+    document.getElementById('region-title').textContent = region.name;
+    document.getElementById('trending-movies').innerHTML = moviesHtml;
+
+    // Pan map to region marker
+    if (markers[regionCode]) {
+      map.setView(markers[regionCode].getLatLng(), 6);
+    }
+  }
+
+  // Add custom CSS for markers
+  var style = document.createElement('style');
+  style.textContent = '.custom-marker { background: transparent; border: none; }';
+  document.head.appendChild(style);
+</script>
+
+<style>
+  .list-group-item {
+    border: 1px solid #dee2e6;
+    border-radius: 0.375rem;
+  }
+  #map {
+    border-radius: 0.375rem;
+  }
+</style>
+{% endblock content %}
+
