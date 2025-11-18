@@ -4,6 +4,7 @@ from .forms import CustomUserCreationForm, CustomErrorList
 from django.shortcuts import redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
+from .models import UserProfile
 
 @login_required
 def logout(request):
@@ -46,3 +47,19 @@ def orders(request):
     template_data['title'] = 'Orders'
     template_data['orders'] = request.user.order_set.all()
     return render(request, 'accounts/orders.html', {'template_data': template_data})
+
+@login_required
+def profile(request):
+    template_data = {}
+    template_data['title'] = 'Profile'
+    
+    # Get or create user profile
+    profile, created = UserProfile.objects.get_or_create(user=request.user)
+    
+    if request.method == 'POST' and 'profile_picture' in request.FILES:
+        profile.profile_picture = request.FILES['profile_picture']
+        profile.save()
+        return redirect('accounts.profile')
+    
+    template_data['profile'] = profile
+    return render(request, 'accounts/profile.html', {'template_data': template_data})
