@@ -1,5 +1,5 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from .models import Movie, Review
+from .models import Movie, Review, Rating
 from django.contrib.auth.decorators import login_required
 
 def index(request):
@@ -17,11 +17,22 @@ def index(request):
 def show(request, id):
     movie = Movie.objects.get(id=id)
     reviews = Review.objects.filter(movie=movie)
+    
+    # Get user's rating if logged in
+    user_rating = None
+    if request.user.is_authenticated:
+        try:
+            user_rating = Rating.objects.get(user=request.user, movie=movie)
+        except Rating.DoesNotExist:
+            user_rating = None
 
     template_data = {}
     template_data['title'] = movie.name
     template_data['movie'] = movie
     template_data['reviews'] = reviews
+    template_data['user_rating'] = user_rating
+    template_data['average_rating'] = movie.average_rating()
+    template_data['rating_count'] = movie.rating_count()
     return render(request, 'movies/show.html', {'template_data': template_data})
 
 def top_comments(request):
@@ -67,5 +78,17 @@ def edit_review(request, id, review_id):
 def delete_review(request, id, review_id):
     review = get_object_or_404(Review, id=review_id, user=request.user)
     review.delete()
+    return redirect('movies.show', id=id)
+
+@login_required
+def rate_movie(request, id):
+    movie = get_object_or_404(Movie, id=id)
+    if request.method == 'POST':
+        rating_value = int(request.POST.get('rating'))
+        Rating.objects.update_or_create(
+            user=request.user,
+            movie=movie,
+            defaults={'rating': rating_value}
+        )
     return redirect('movies.show', id=id)
 
