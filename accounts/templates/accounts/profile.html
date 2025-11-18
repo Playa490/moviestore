@@ -11,7 +11,7 @@
           {% if template_data.profile.profile_picture %}
             <img src="{{ template_data.profile.profile_picture.url }}" alt="Profile Picture" class="img-fluid" style="max-width: 300px;" />
           {% else %}
-            <p>No profile picture uploaded yet.</p>
+            <img src="{% static 'img/logo.png' %}" alt="Default Profile Picture" class="img-fluid" style="max-width: 300px;" />
           {% endif %}
         </div>
         <form method="post" enctype="multipart/form-data">
